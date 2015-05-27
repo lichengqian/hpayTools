@@ -40,6 +40,7 @@ socketClient dest s HubClient{..} = do
                 Nothing -> do
                     infoM name $ "socket closed! exit recv thread!"
                     sendMessage (dest, encodeStrict $ CloseConnection)
+                    threadDelay 500000  -- 等待半秒，确保sendMessage消息发送完成
                     closeClient         -- 关闭hub client
                     return ()
         serv = do
