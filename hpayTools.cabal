@@ -1,0 +1,62 @@
+name:              hpayTools
+version:           1.0
+Build-Type:        Simple
+cabal-version:     >= 1.2
+
+executable hpayctl
+  main-is:         ClientMain.hs
+  hs-source-dirs:  src
+  build-depends:   base,
+                    extra,
+                    bytestring,
+                    binary,
+                    text,
+                    transformers,
+                    containers,
+                    parsec,
+                    stm,
+                    stm-containers,
+                    list-t,
+                    hslogger,
+                    io-streams,
+                    binary-streams,
+--                    hslua,
+                    luautils,
+                    shelly,
+                    network,
+                    network-simple,
+                    network-multicast,
+                    network-socket-options,
+                    deepseq,
+                    unordered-containers,
+                    async,
+                    split,
+                    cmdargs
+
+executable hpayd
+  main-is:         ServerMain.hs
+  hs-source-dirs:  src
+  build-depends:   base,
+                    extra,
+                    bytestring,
+                    binary,
+                    text,
+                    transformers,
+                    containers,
+                    parsec,
+                    stm,
+                    stm-containers,
+                    list-t,
+                    hslogger,
+                    io-streams,
+                    binary-streams,
+                    hslua,
+                    luautils,
+                    shelly,
+                    network,
+                    network-simple,
+                    network-multicast,
+                    network-socket-options,
+                    deepseq,
+                    unordered-containers,
+                    async
