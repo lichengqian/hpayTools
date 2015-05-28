@@ -17,12 +17,12 @@ name = "nameService"
 -- 命名服务
 nameService :: HubApp
 nameService HubClient{..} = do
-    registry :: TVar (Map String Int) <- newTVarIO Map.empty
+    registry :: TVar (Map String ClientID) <- newTVarIO Map.empty
 
     forever $ do
         PNameMessage src msg <- recvMessage
         let response ret = do
-                debugM name $ show (src, msg) ++ " --> " ++ show (ret :: Either String Int)
+                debugM name $ show (src, msg) ++ " --> " ++ show (ret :: Either String ClientID)
                 sendMessage (src, encodeStrict ret)
         join $ stm $ case msg of
             NameRegister name -> do

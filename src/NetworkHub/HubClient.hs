@@ -11,6 +11,7 @@ import Importer
 import Constants
 import Data.Table
 import System.IO.Channels
+import System.Random
 import qualified System.IO.Streams as Streams
 import System.IO.Streams.Binary
 import Util.StreamUtil
@@ -22,18 +23,23 @@ import Control.Concurrent.Async
 name = "hubClient"
 
 -- | 程序不关闭Socket连接，依赖操作系统关闭连接!
-hubClient :: HostPort -> Int -> (Socket -> HubApp) -> IO ()
-hubClient hostport ip' app = connect proxyhost proxyport go where
+hubClient :: HostPort -> (Socket -> HubApp) -> IO ()
+hubClient hostport app = connect proxyhost proxyport go where
     [proxyhost, proxyport] = splitOn ":" hostport
     go (connectionSocket, remoteAddr) = do
-        -- 设置NoDelay，防止socket关闭时丢包
-        setTcpNoDelay connectionSocket True
         infoM name $ "Connection established to " ++ show remoteAddr
         (inn, out') <- socketToClosableStreams connectionSocket
         out  <- lockingOutputStream out'
         writeBinary out "hubServer"
-        -- 申请客户端ID
-        clientid <- writeBinary out ip' >> readBinary inn
+        let register = do
+                ip' <- randomIO :: IO ClientID
+                writeBinary out ip'
+                er :: Either String ClientID <- readBinary inn
+                case er of
+                    Left err -> infoM name err >> register
+                    Right ip -> return ip
+        -- 注册客户端ID
+        clientid <- register
         infoM name $ "hub client id is " ++ show clientid
 
         let sendMessage (dest, bs) = writeBinary out $ NetPackage clientid dest bs

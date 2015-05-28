@@ -63,7 +63,7 @@ tcpQuery remoteport= (1, encodeStrict $ NameQuery $ tcpPrefix ++ remoteport)
 
 -- 发布本地tcp server ，需要指定一个远程虚拟端口
 tcpSkeleton :: HostPort -> String -> IO ()
-tcpSkeleton hostport proxy = hubClient hostport 0 $ \_ HubClient{..} -> do
+tcpSkeleton hostport proxy = hubClient hostport $ \_ HubClient{..} -> do
     let [localhost, localport, remoteport] = splitOn ":" proxy
     -- step 1 : 注册服务名称 : tcpSkeleton/xxx
     sendMessage $ tcpRegister remoteport
@@ -81,7 +81,7 @@ tcpSkeleton hostport proxy = hubClient hostport 0 $ \_ HubClient{..} -> do
                 void $ forkIO $ connect localhost localport $ \(s, addr) -> do
                     infoM name $ "connect to " ++ localhost ++ ":" ++ localport
                     -- 新启动一个hubClient
-                    hubClient hostport 0 $ \_ client@HubClient{..} -> do
+                    hubClient hostport $ \_ client@HubClient{..} -> do
                         sendMessage (src, encodeStrict NewConnection)
                         socketClient src s client
                 return ()
@@ -92,7 +92,7 @@ tcpSkeleton hostport proxy = hubClient hostport 0 $ \_ HubClient{..} -> do
 
 -- | 启动本地tcp stub，转发至远程虚拟端口
 tcpStub :: HostPort -> String -> IO ()
-tcpStub hostport proxy = hubClient hostport 0 $ \hubSocket HubClient{..} -> do
+tcpStub hostport proxy = hubClient hostport $ \hubSocket HubClient{..} -> do
     let [localport, remoteport] = splitOn ":" proxy
     -- step 1 : 查询服务名称
     sendMessage $ tcpQuery remoteport
@@ -111,7 +111,7 @@ tcpStub hostport proxy = hubClient hostport 0 $ \hubSocket HubClient{..} -> do
         let go = forever $ acceptFork ls $ \(s, addr) -> do
                 -- 新启动一个hubClient
                 infoM name $ "income connection from port : " ++ localport
-                hubClient hostport 0 $ \_ client@HubClient{..} -> do
+                hubClient hostport $ \_ client@HubClient{..} -> do
                     -- 申请虚拟IP
                     sendMessage (serverip, encodeStrict NewConnection)
                     PPMsg src NewConnection <- recvMessage

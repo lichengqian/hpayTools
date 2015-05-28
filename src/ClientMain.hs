@@ -63,4 +63,4 @@ main = cmdArgsRun mode >>= hpayctl
 
 -- test code
 t_skeleton  = hpayctl TcpSkeleton{hostport="127.0.0.1:9999", proxy="127.0.0.1:2222:liming/centos", level="INFO"}
-t_stub      = hpayctl TcpStub{hostport="127.0.0.1:9999", proxy="3333:liming/centos", level="INFO"}
+t_stub      = hpayctl TcpStub{hostport="127.0.0.1:9999", proxy="3333:liming/centos", level="DEBUG"}

@@ -8,6 +8,7 @@ executable hpayctl
   hs-source-dirs:  src
   build-depends:   base,
                     extra,
+                    random,
                     bytestring,
                     binary,
                     text,
