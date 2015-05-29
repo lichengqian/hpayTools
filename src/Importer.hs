@@ -15,7 +15,7 @@ import Control.Exception.Extra as X (try, try_, SomeException, finally)
 import Control.Concurrent as X
 import Control.Concurrent.STM as X
 import GHC.Generics as X (Generic)
-import Data.List.Split as X (splitOn)
+import Data.List.Extra as X
 import System.Log.Logger as X
 
 stm = atomically
