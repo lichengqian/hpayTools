@@ -6,6 +6,7 @@ cabal-version:     >= 1.2
 executable hpayctl
   main-is:         ClientMain.hs
   hs-source-dirs:  src
+  GHC-Options:     -Wall -threaded -rtsopts -O2
   build-depends:   base,
                     extra,
                     random,
@@ -35,6 +36,7 @@ executable hpayctl
 executable hpayd
   main-is:         ServerMain.hs
   hs-source-dirs:  src
+  GHC-Options:     -Wall -threaded -rtsopts -O2
   build-depends:   base,
                     extra,
                     bytestring,
