@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables, DeriveGeneric #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns, PatternSynonyms #-}
 {-# LANGUAGE MonadComprehensions #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -9,8 +9,6 @@ module NetworkHub.HubClient (
 
 import Importer
 import Constants
-import Data.Table
-import System.IO.Channels
 import System.Random
 import qualified System.IO.Streams as Streams
 import System.IO.Streams.Binary
@@ -28,7 +26,8 @@ hubClient hostport app = connect proxyhost proxyport go where
     [proxyhost, proxyport] = splitOn ":" hostport
     go (connectionSocket, remoteAddr) = do
         infoM name $ "Connection established to " ++ show remoteAddr
-        (inn, out') <- socketToClosableStreams connectionSocket
+        (inn', out') <- socketToClosableStreams connectionSocket
+        inn <- Streams.lockingInputStream inn'
         out  <- lockingOutputStream out'
         writeBinary out "hubServer"
         let register = do
@@ -44,7 +43,8 @@ hubClient hostport app = connect proxyhost proxyport go where
 
         let sendMessage (dest, bs) = writeBinary out $ NetPackage clientid dest bs
             recvMessage = do
-                p@(NetPackage src _ bs) <- readBinary inn
+                p@(NetPackage src dest bs) <- readBinary inn
+                debugM name $ "received:" ++ show p
                 case (src, bs) of
                     (0, decodeStrict -> HubCheckHealth fromid) -> do
                         debugM name $ "recv health check from " ++ show fromid

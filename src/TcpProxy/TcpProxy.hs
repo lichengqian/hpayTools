@@ -11,7 +11,6 @@ import qualified Data.Map as M
 import Control.Concurrent.Async
 import qualified System.IO.Streams as Streams
 import System.IO.Streams.Network
-import System.IO.Channels
 
 import Util.StreamUtil
 import NetworkHub.Types
@@ -68,9 +67,10 @@ tcpSkeleton hostport proxy = hubClient hostport $ \_ HubClient{..} -> do
     -- step 1 : 注册服务名称 : tcpSkeleton/xxx
     sendMessage $ tcpRegister remoteport
     (_, bs) <- recvMessage
-    case decodeStrict bs :: Either String Int of
-        Left err -> error $ "register name error : "
-        Right serverip -> return ()
+    case decodeStrict bs of
+        NameResult (Left err) -> error $ "register name error : "
+        NameResult (Right serverip) -> return ()
+    infoM name $ "register ok! " ++ proxy
 
     -- step 2 : 只需要处理新建连接请求
     let go = forever $ do
@@ -98,9 +98,9 @@ tcpStub hostport proxy = hubClient hostport $ \hubSocket HubClient{..} -> do
     sendMessage $ tcpQuery remoteport
     (_, decodeStrict -> msg) <- recvMessage
     serverip <- case msg of
-        Left err -> error $ "register name error : " ++ err
-        Right serverip -> return serverip
-    infoM name $ "send connect port " ++ remoteport ++ " = " ++ show serverip
+        NameResult (Left err) -> error $ "register name error : " ++ err
+        NameResult (Right serverip) -> return serverip
+    infoM name $ "name query port " ++ remoteport ++ " = " ++ show serverip
 
     -- 设置Socket接收超时，用于心跳检测
     let t = 5000000     -- 5秒心跳间隔

@@ -4,12 +4,12 @@ module NetworkHub.Types where
 import Importer
 import Util.StreamUtil
 
-type ClientID = Int
+type ClientID = Word32
 type SrcPort = ClientID
 type DestPort = ClientID
 
 data NetPackage = NetPackage !SrcPort !DestPort !ByteString -- ^ source dest content
-    deriving (Generic)
+    deriving (Show,Generic)
 instance Binary NetPackage
 
 -- hub client和server之间的通信消息，hub server的DestPort固定为0
@@ -34,6 +34,7 @@ type HubApp = HubClient -> IO ()
 -- 命名服务消息
 data NameMessage = NameRegister !String        -- ^ 返回Either String ()
                  | NameQuery !String                -- ^ 返回Either String Int
+                 | NameResult (Either String ClientID)
     deriving (Generic, Show)
 instance Binary NameMessage
 

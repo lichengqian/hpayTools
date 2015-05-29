@@ -6,7 +6,6 @@ module NetworkHub.HubApps(nameService) where
 import Importer
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
-import System.IO.Channels
 import qualified System.IO.Streams as Streams
 import System.IO.Streams.Binary
 import Util.StreamUtil
@@ -23,7 +22,7 @@ nameService HubClient{..} = do
         PNameMessage src msg <- recvMessage
         let response ret = do
                 debugM name $ show (src, msg) ++ " --> " ++ show (ret :: Either String ClientID)
-                sendMessage (src, encodeStrict ret)
+                sendMessage (src, encodeStrict $ NameResult ret)
         join $ stm $ case msg of
             NameRegister name -> do
                 names <- readTVar registry
