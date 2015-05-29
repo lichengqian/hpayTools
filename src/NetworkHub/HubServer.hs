@@ -97,10 +97,15 @@ hubServerApp apps = do
         -- 分配地址 0: 随机分配
         let checkAddClient = do
                 ip'<- readBinary inn
-                mc <- stm $ addClient ip'
-                case mc of
-                    Just client -> writeBinary out (Right ip' :: Either String ClientID) >> return client
-                    Nothing      -> writeBinary out (Left "already used clientid" :: Either String ClientID) >> checkAddClient
+                case () of
+                  _ | ip' < 10000 -> retry "too small clientid"
+                    | otherwise  -> do
+                        mc <- stm $ addClient ip'
+                        case mc of
+                            Just client -> writeBinary out (Right ip' :: Either String ClientID) >> return client
+                            Nothing      -> retry "already used clientid"
+                where
+                    retry msg = writeBinary out (Left msg :: Either String ClientID) >> checkAddClient
         Client{..} <- checkAddClient
         let prefix = show clientid ++ ":"
             processPackage (NetPackage src 0 bs)
