@@ -41,10 +41,10 @@ hubClient hostport app = connect proxyhost proxyport go where
         clientid <- register
         infoM name $ "hub client id is " ++ show clientid
 
-        let sendMessage (dest, bs) = writeBinary out $ NetPackage clientid dest bs
+        let sendMessage (dest, bs) = writeBinary out (dest, bs)
             recvMessage = do
-                p@(NetPackage src dest bs) <- readBinary inn
-                debugM name $ "received:" ++ show p
+                (src, bs) <- readBinary inn
+                debugM name $ "received:" ++ show (src, bs)
                 case (src, bs) of
                     (0, decodeStrict -> HubCheckHealth fromid) -> do
                         debugM name $ "recv health check from " ++ show fromid

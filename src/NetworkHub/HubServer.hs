@@ -77,6 +77,7 @@ newServer = do
                     return (src, bs)
                 closeClient = removeClient clientid
             return HubClient{..}
+
         startApp clientid app = do
             client <- newClient clientid
             forkFinally (app client) $ \_ ->closeClient client
@@ -88,7 +89,7 @@ hubServerApp apps = do
     -- ^ 保存所有已连接的客户端
     Server{..} <- newServer
     -- 启动内置应用
-    forM_ apps $ \(ip', app) -> startApp ip' app
+    forM_ apps $ uncurry startApp
 
     return $ \inn' out' -> do
         inn <- Streams.lockingInputStream inn'
@@ -116,15 +117,13 @@ hubServerApp apps = do
             processPackage packet = sendPackage packet
 
             receive = forever $ do      -- 接收线程，根据目的地址分发报文
-                packet <- readBinary inn
-                debugM name $ "received : " ++ show packet
-                processPackage packet
+                (dest, bs) <- readBinary inn
+                debugM name $ "received : " ++ show (dest, bs)
+                processPackage $ NetPackage clientid dest bs
             serve = forever $ do
-                p <- stm $ readTChan channel
-                debugM name $ "sending : " ++ show p
-                writeBinary out p
-            runClient = do
-                writeBinary out clientid
-                race_ (namedAction (prefix ++ "receive") receive) (namedAction (prefix ++ "serv") serve)
+                NetPackage src dest bs <- stm $ readTChan channel
+                debugM name $ "sending : " ++ show (src, dest)
+                writeBinary out (src,bs)
+            runClient = race_ (namedAction (prefix ++ "receive") receive) (namedAction (prefix ++ "serv") serve)
         -- TODO: removeClient从来不会被调用！！！因为两个子线程永远不退出！
         runClient `finally` removeClient clientid
