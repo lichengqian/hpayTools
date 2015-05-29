@@ -50,4 +50,4 @@ main :: IO ()
 main = cmdArgsRun mode >>= hpayd
 
 -- test function
-test = hpayd Hpayd{ port = "9999", level = "DEBUG"}
+test = hpayd Hpayd{ port = "9999", level = "INFO"}

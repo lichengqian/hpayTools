@@ -18,7 +18,7 @@ import NetworkHub.HubClient
 
 data ProxyMessage =
     NewConnection               -- ^ 新连接申请及分配
-  | CloseConnection             -- ^ 关闭连接
+  | CloseConnection String      -- ^ 关闭连接
   | DataStream !ByteString      -- ^ 数据报文
   deriving (Show, Generic)
 
@@ -38,7 +38,7 @@ socketClient dest s HubClient{..} = do
                     recv
                 Nothing -> do
                     infoM name $ "socket closed! exit recv thread!"
-                    sendMessage (dest, encodeStrict $ CloseConnection)
+                    sendMessage (dest, encodeStrict $ CloseConnection "read Nothing")
                     threadDelay 500000  -- 等待半秒，确保sendMessage消息发送完成
                     closeClient         -- 关闭hub client
                     return ()
@@ -48,8 +48,8 @@ socketClient dest s HubClient{..} = do
                 DataStream bs -> do
                     Streams.write (Just bs) s_out
                     serv
-                CloseConnection -> do
-                    infoM name $ "remote closed! exit serv thread!"
+                CloseConnection errmsg -> do
+                    infoM name $ "remote closed! exit serv thread!" ++ errmsg
                     closeSock s     -- 关闭socket将导致recv线程退出
                     return ()
     race_ serv recv `finally` do
@@ -78,12 +78,18 @@ tcpSkeleton hostport proxy = hubClient hostport $ \_ HubClient{..} -> do
         debugM name $ "recv " ++ show (src, e)
         case e of
             NewConnection -> do
-                void $ forkIO $ connect localhost localport $ \(s, addr) -> do
-                    infoM name $ "connect to " ++ localhost ++ ":" ++ localport
-                    -- 新启动一个hubClient
-                    hubClient hostport $ \_ client@HubClient{..} -> do
-                        sendMessage (src, encodeStrict NewConnection)
-                        socketClient src s client
+                mret <- try_ $ connectSock localhost localport
+                case mret of
+                    -- 连接失败，发送通知
+                    Left err -> sendMessage (src, encodeStrict $ CloseConnection $ show err)
+                    Right (s, addr) -> do
+                        infoM name $ "connect to " ++ localhost ++ ":" ++ localport
+                        -- 新启动一个hubClient
+                        let go = hubClient hostport $ \_ client@HubClient{..} -> do
+                                    sendMessage (src, encodeStrict NewConnection)
+                                    socketClient src s client
+                        forkFinally go $ \_ -> closeSock s
+                        return ()
                 return ()
             _ -> do
                 warningM name $ "unexpected message: " ++ show (src, e)
@@ -114,8 +120,12 @@ tcpStub hostport proxy = hubClient hostport $ \hubSocket HubClient{..} -> do
                 hubClient hostport $ \_ client@HubClient{..} -> do
                     -- 申请虚拟IP
                     sendMessage (serverip, encodeStrict NewConnection)
-                    PPMsg src NewConnection <- recvMessage
-                    socketClient src s client
+                    PPMsg src msg <- recvMessage
+                    case msg of
+                        NewConnection -> socketClient src s client
+                        CloseConnection errmsg -> do
+                            warningM name $ "connect failed ! " ++ errmsg
+                            return ()
 
                 infoM name $ "income connection closed " ++ show addr
             heartbeat t = do
