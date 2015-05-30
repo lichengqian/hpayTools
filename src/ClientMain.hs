@@ -59,7 +59,7 @@ hpayctl cmd = withSocketsDo $ do
         TcpStub{..}     -> tcpStub hostport proxy
 
 main :: IO ()
-main = cmdArgsRun mode >>= hpayctl
+main = withSource $ cmdArgsRun mode >>= hpayctl
 
 -- test code
 t_skeleton  = hpayctl TcpSkeleton{hostport="127.0.0.1:9999", proxy="127.0.0.1:2222:liming/centos", level="INFO"}
