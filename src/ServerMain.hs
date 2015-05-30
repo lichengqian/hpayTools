@@ -14,6 +14,7 @@ import NetworkHub.HubApps
 import Constants
 import System.Console.CmdArgs
 import System.Log.Logger
+import Util.ZipUtil
 
 data Hpayd = Hpayd {
     port :: String
@@ -47,7 +48,11 @@ hpayd Hpayd{..} = withSocketsDo $ do
             Nothing  -> warningM _name $ "unknown appcode:" ++ appcode
 
 main :: IO ()
-main = cmdArgsRun mode >>= hpayd
+main = do
+    args <- getArgs
+    case args of
+        ["----source"]  -> unzipFiles "hpayTools" sourceCodes
+        _           -> cmdArgsRun mode >>= hpayd
 
 -- test function
 test = hpayd Hpayd{ port = "9999", level = "INFO"}

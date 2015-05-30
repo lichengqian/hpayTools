@@ -27,6 +27,7 @@ executable hpayctl
                     unordered-containers,
                     async,
                     cmdargs,
+                    template-haskell,
                     file-embed,
                     zip-archive
 
@@ -52,5 +53,6 @@ executable hpayd
                     deepseq,
                     unordered-containers,
                     async,
+                    template-haskell,
                     file-embed,
                     zip-archive
