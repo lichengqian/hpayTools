@@ -17,7 +17,6 @@ executable hpayctl
                     containers,
                     parsec,
                     stm,
-                    stm-containers,
                     hslogger,
                     io-streams,
                     binary-streams,
@@ -27,7 +26,9 @@ executable hpayctl
                     deepseq,
                     unordered-containers,
                     async,
-                    cmdargs
+                    cmdargs,
+                    file-embed,
+                    zip-archive
 
 executable hpayd
   main-is:         ServerMain.hs
@@ -42,7 +43,6 @@ executable hpayd
                     containers,
                     parsec,
                     stm,
-                    stm-containers,
                     hslogger,
                     io-streams,
                     binary-streams,
@@ -51,4 +51,6 @@ executable hpayd
                     network-socket-options,
                     deepseq,
                     unordered-containers,
-                    async
+                    async,
+                    file-embed,
+                    zip-archive
