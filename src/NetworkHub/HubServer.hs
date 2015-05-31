@@ -1,6 +1,7 @@
 {-# LANGUAGE NamedFieldPuns, RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE ViewPatterns, PatternSynonyms #-}
+{-# LANGUAGE MultiWayIf, LambdaCase #-}
 module NetworkHub.HubServer(hubServerApp) where
 
 import Importer
@@ -97,11 +98,8 @@ hubServerApp apps = do
         -- 分配地址 0: 随机分配
         let checkAddClient = do
                 ip'<- readBinary inn
-                case () of
-                  _ | ip' < 10000 -> retry "too small clientid"
-                    | otherwise  -> do
-                        mc <- stm $ addClient ip'
-                        case mc of
+                if  | ip' < 10000 -> retry "too small clientid"
+                    | otherwise  -> stm (addClient ip') >>= \case
                             Just client -> writeBinary out (Right ip' :: Either String ClientID) >> return client
                             Nothing      -> retry "already used clientid"
                 where
@@ -114,11 +112,9 @@ hubServerApp apps = do
                     sendPackage $ NetPackage 0 src $ encodeStrict $ HubHealthy 0
                 | m@(HubCheckHealth checkid) <- decodeStrict bs = do
                     debugM name $ "recv healty check " ++ show (src, m)
-                    stm $ do
-                        mclient <- lookupClient checkid
-                        case  mclient of
-                            Just Client{writePackage} -> writePackage $ NetPackage 0 checkid $ encodeStrict $ HubCheckHealth src
-                            Nothing -> writePackage $ NetPackage 0 clientid $ encodeStrict $ HubClientNotfound checkid
+                    stm $ lookupClient checkid >>= \case
+                        Just Client{writePackage} -> writePackage $ NetPackage 0 checkid $ encodeStrict $ HubCheckHealth src
+                        Nothing -> writePackage $ NetPackage 0 clientid $ encodeStrict $ HubClientNotfound checkid
             processPackage packet = sendPackage packet
 
             receive = forever $ do      -- 接收线程，根据目的地址分发报文
