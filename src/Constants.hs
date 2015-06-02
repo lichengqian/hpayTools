@@ -8,6 +8,8 @@ import System.Environment
 
 type HostPort = String -- ^ host:port
 
+version = "0.8-2015-6"
+
 sourceCodes :: ByteString
 sourceCodes = $(embedFile "dist/source.zip")
 

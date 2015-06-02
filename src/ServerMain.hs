@@ -23,11 +23,13 @@ data Hpayd = Hpayd {
   , multicast :: Bool
 } deriving (Data, Typeable, Show, Eq)
 
-mode = cmdArgsMode Hpayd {
-    port = "80" &= help "server port" &= typ "PORT"
+mode = cmdArgsMode $ Hpayd {
+    port = "1230" &= help "server port" &= typ "PORT"
   , level = "INFO" &= help "log level, default is INFO" &= typ "DEBUG|INFO|WARNING|ERROR"
   , multicast = False &= help "multicast hpayd info"
-}
+}   &= help "hpayd"
+    &= program "hpayd"
+    &= summary ("hpayd v"++ version)
 
 _name = "hpayd"
 
