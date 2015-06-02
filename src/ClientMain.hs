@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE MultiWayIf, LambdaCase #-}
 module Main where
 
 import Util.StreamUtil
@@ -9,6 +10,8 @@ import TcpProxy.TcpProxy
 import Constants
 import System.Console.CmdArgs
 import System.Log.Logger
+
+import qualified Util.MulticastUtil as Multicast
 
 version = "0.6-2015-5"
 
@@ -54,9 +57,17 @@ _name = "hpayctl"
 hpayctl cmd = withSocketsDo $ do
     updateGlobalLogger rootLoggerName $ setLevel $ read $ level cmd
     infoM _name $ show cmd
+    server <- if
+        | null $ hostport cmd -> do
+            infoM _name "finding hpayd "
+            Multicast.Sender{..} <- Multicast.newSender
+            (from, port) <- ask "hpayd"
+            return $ from ++ ":" ++ port
+        | otherwise -> return $ hostport cmd
+    infoM _name $ "connect to " ++ server
     case cmd of
-        TcpShare{..} -> tcpSkeleton hostport proxy
-        TcpConnect{..}     -> tcpStub hostport proxy
+        TcpShare{..} -> tcpSkeleton server proxy
+        TcpConnect{..}     -> tcpStub server proxy
 
 main :: IO ()
 main = withSource $ cmdArgsRun mode >>= hpayctl
